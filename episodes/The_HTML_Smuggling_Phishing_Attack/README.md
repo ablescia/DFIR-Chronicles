@@ -6,4 +6,4 @@ The team is called in after a client forwards a suspicious EML file. Inside, an 
 
 As Dylan deciphers the smuggled payload, Cyra traces the behavioral fingerprints, and Byte dissects the layers of misleading code, the team must piece together the attacker's intent before others fall victim.
 
-This case isn't just about catching malware — it's about confronting a modern adversary who hides behind code, misdirection, and psychological manipulation. And in a world where the line between user error and engineered deception grows thinner by the day, The DFIR Chronicles remind us: the truth is always in the logs.
+This case isn't just about catching malware, it's about confronting a modern adversary who hides behind code, misdirection, and psychological manipulation. And in a world where the line between user error and engineered deception grows thinner by the day, The DFIR Chronicles remind us: the truth is always in the logs.
