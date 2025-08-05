@@ -14,4 +14,4 @@ Together, they dissect malware masquerading as invoices, trace phishing trails t
 
 Dark. Technical. Uncompromising.
 
-The DFIR Chronicles isn't just a comic — it's incident response, with trench coats.
+The DFIR Chronicles isn't just a comic: it's incident response, with trench coats.
