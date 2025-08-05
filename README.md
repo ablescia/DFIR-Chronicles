@@ -15,3 +15,13 @@ Together, they dissect malware masquerading as invoices, trace phishing trails t
 Dark. Technical. Uncompromising.
 
 The DFIR Chronicles isn't just a comic: it's incident response, with trench coats.
+
+---
+
+## Episodes
+
+### 01 - The HTML Smuggling Phishing Attack
+
+A malicious email. An innocent-looking HTML attachment. Inside, obfuscated JavaScript builds a payload designed to bypass defenses and steal credentials. The team peels back the layers of digital deception to expose a phishing campaign built on HTML Smuggling.
+
+*(More episodes coming soon...)*
