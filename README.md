@@ -1,5 +1,3 @@
-# DFIR-Chronicles
-
 ![banner](./banner.png)
 
 A cyber-noir saga from the shadows of the digital battlefield.
