@@ -1,4 +1,4 @@
-# The HTML Smiggling Phishing Attack
+# The HTML Smuggling Phishing Attack
 
 In this episode of The DFIR Chronicles, cyber-investigator Dylan Log, analyst Cyra Neuron, and forensic prodigy Byte dive into a seemingly ordinary email investigation — one that quickly spirals into a dangerous web of deception.
 
