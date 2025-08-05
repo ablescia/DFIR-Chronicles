@@ -1,2 +1,3 @@
 # DFIR-Chronicles
-THe Official DFIR Chronicles comic repositoru
+
+THe Official DFIR Chronicles comic repository
