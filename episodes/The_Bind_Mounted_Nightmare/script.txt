@@ -1,0 +1,73 @@
+1. Dimly lit SOC war room. Rain streaks the glass wall. Alexander stands by the window, phone in hand. Dylan leans against a desk, coat draped over a chair. Byte scrolls rapidly on a laptop.
+Alexander: "We’ve got beaconing from srv-001. Hitting a known bad IP: 185.118.164.195. Dynamic DNS—e36f249c-8e3a.ddns.net."
+Dylan: "Internal box talking to a C2? That’s bad."
+Byte: "We’ll need an offline grab. Velociraptor’s going in."
+
+2. The hum of servers fills the room. Cyra slides a USB into a laptop, packaging the collector.
+Byte: "Loading artifacts: Linux.Collection.Syslogs, Linux.Sys.Pslist, Linux.Network.Netstat.Watcher, Linux.Sockstat.Sockstat, Linux.Sys.LastUserLogins."
+<< Terminal screen shows: Selected artifacts listed in a Velociraptor GUI >>
+Cyra: "Ship it to Alexander. No remote touch—we keep it quiet."
+
+3. A single lamp over Alexander’s desk. He opens an email from Byte containing the collector package.
+Alexander: "Got it. Deploying on srv-001 now."
+<< Panel shows console output from Velociraptor offline run >>
+Dylan (off-panel): "Every second counts."
+
+4. SOC night shift. Byte hunches over a glowing monitor, reviewing the returned artifacts.
+Byte: "Odd... Authority account login at 03:14. Not the usual maintenance window."
+Cyra: "Privileged access at that hour? Smells like trouble."
+
+5. The terminal casts a green glow on Byte's glasses.
+Byte: "Linux.Network.Netstat.Watcher output… here's the kicker—active connection, but no PID tied to it."
+<< Terminal shows: Linux.Network.Netstat.Watcher table result → "?         185.118.164.195:443" >>
+Dylan: "That's not a glitch. That's defense evasion."
+
+6. A cold wind whistles through the cracked window. Cyra leans in.
+Cyra: "Let’s go deeper. Volatile memory analysis with Linux.Memory.AVML. Pull it before it's gone."
+Byte: "On it."
+
+7. Alexander’s office. The AVML dump progress bar crawls across the screen.
+<< Terminal shows: avml srv-001.mem.lime >>
+Alexander: "Dump complete. Sending to you now."
+Dylan: "This is where the mask comes off."
+
+8. SOC forensics lab. Byte unpacks the dump with Volatility3.
+<< Terminal shows: volatility3 -f srv-001.mem.lz4 linux.elfs.Elfs >>
+Byte: "Weird… /tmp/lightdm. Wrong place for a display manager binary."
+Cyra: "Classic trick—hide the blade where no one looks."
+
+9. Byte’s screen filled with hex and mapped addresses.
+Byte: "Extracting memory maps: linux.proc.Maps."
+<< Terminal shows: volatility3 ... linux.proc.Maps --pid X >>
+Dylan: "Get me the strings. I want its secrets."
+Byte: "Already cutting it open."
+
+10. Strings output floods the panel.
+<< Terminal shows: strings 1234_0x7f....dmp | grep e36f249c-8e3a.ddns.net >>
+Byte: "There it is—the domain Alexander flagged."
+Cyra: "The ghost speaks."
+
+11. Byte swivels to another terminal window.
+Byte: "Cross-checking with Linux.Sockstat.Sockstat…"
+<< Terminal shows: tcp ESTAB 0 0 192.168.1.15:random 185.118.164.195:443 >>
+Byte: "Process confirmed—it’s talking to our malicious friend."
+
+12. Dylan, arms crossed, watching Byte.
+Dylan: "So how’s it hiding?"
+Byte: "My bet? T1564.013—Bind Mounts."
+Cyra: "Run Linux.mountinfo.MountInfo. Let’s catch it in the act."
+
+13. The Volatility output reveals the smoking gun.
+<< Terminal shows: tmpfs /proc/1234 type tmpfs (rw,nosuid,nodev) >>
+Byte: "Bingo. Reserved /proc dir, masked with a tmpfs."
+Dylan: "That’s why netstat showed a phantom."
+
+14. The cleanup. Byte runs commands to unmount and remove the trojan.
+<< Terminal shows: umount /proc/1234 && rm /tmp/lightdm >>
+Cyra: "And just like that… the shadow fades."
+Alexander (over comms): "Srv-001 is clean."
+
+15. Dawn over the city. Dylan lights a cigarette. Byte types into a Velociraptor dev window.
+Byte: "New artifact: Linux.Mounts.ProcBindMount. No one hides like this again."
+Cyra: "Every case leaves us sharper."
+Dylan: "And every shadow leaves another waiting."
