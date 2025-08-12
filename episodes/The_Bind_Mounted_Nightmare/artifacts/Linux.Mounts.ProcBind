@@ -1,0 +1,17 @@
+name: Linux.Mounts.ProcBind
+description: |
+   Detects possible "Hide Artifacts: Bind Mounts" (MITRE ATT&CK T1564.013) on Linux
+   by identifying tmpfs mounts over /proc/* paths. Such mounts can mask process
+   information, preventing tools like ps or top from displaying real process data.
+
+author: Antonio Blescia (TheThMando)
+required_permissions:
+   - READ_RESULTS
+type: CLIENT
+sources:
+  - precondition:
+      SELECT OS From info() where OS = 'linux'
+    query: |
+      SELECT *
+      FROM Artifact.Linux.Mounts()
+      WHERE FSType = "tmpfs" and Mount =~ "/proc/*"
