@@ -1,5 +1,3 @@
-# Ultra-Compressed Cyber-Noir Comic Script Prompt (with Visual Constraints)
-
 Act as a professional scriptwriter for a cyber-noir comic book titled **"The DFIR Chronicles"**, set in the world of digital forensics and incident response. You will receive a **technical step-by-step guide** (e.g., how to detect brute-force attacks via logs).
 
 Your task: **turn the guide into a comic book script**, max **15 pages**, each page = **one self-contained scene**.
