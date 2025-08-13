@@ -77,6 +77,7 @@ When creating a **cover illustration**, you must:
 | **Dylan Log**  | ~40 years old, black unkempt hair, 2-day stubble, trench coat, tired eyes |
 | **Cyra Neuron**| ~30, sleek cyberpunk look, silver-violet ponytail, leather jacket, piercing gaze |
 | **Byte ("Bitty")** | ~25, skinny, round glasses, nerd shirt (ASCII symbols), surrounded by cables/screens |
+| **Alexander** | male, ~40s-50s, bald with short beard, formal grey suit and patterned tie, sad and concerned, confident and approachable demeanor, soc manager|
 
 Characters must look **identical across all pages and covers** and be easily recognizable.
 
