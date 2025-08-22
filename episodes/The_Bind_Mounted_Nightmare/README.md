@@ -147,7 +147,7 @@ Byte runs:
 python3 vol.py -f ../memory.dump.lime linux.sockstat.Sockstat
 ```
 
-This plugin reveals socket states held in memory, confirming the connection to the previously observed IP/domain—supporting the initial defense evasion hypothesis.
+This plugin reveals socket states held in memory, confirming the connection to the previously observed IP/domain, this supporting the initial defense evasion hypothesis.
 
 ### 13. Verifying Bind Mount Defense Evasion
 
