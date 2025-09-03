@@ -22,4 +22,8 @@ The DFIR Chronicles isn't just a comic: it's incident response, with trench coat
 
 A malicious email. An innocent-looking HTML attachment. Inside, obfuscated JavaScript builds a payload designed to bypass defenses and steal credentials. The team peels back the layers of digital deception to expose a phishing campaign built on HTML Smuggling.
 
+### 02 - The Bind Mounted Nightmare
+
+When beaconing activity from an internal server (srv-001) to a known malicious IP is detected, the team is called in. Byte deploys a Velociraptor Offline Collector, gathering key forensic artifacts. Anomalies emerge: an unusual-hour login and a process with no associated PID, hinting at defense evasion. Volatile memory analysis reveals a suspicious binary (/tmp/lightdm) running from an odd location. Strings analysis of memory dumps uncovers the malicious domain, confirming the threat. Further investigation exposes a bind mount in /proc, used to hide the trojan (MITRE T1564.013). After cleaning the system, Byte contributes a new Velociraptor artifact to help defenders detect bind mounts.
+
 *(More episodes coming soon...)*
