@@ -26,4 +26,8 @@ A malicious email. An innocent-looking HTML attachment. Inside, obfuscated JavaS
 
 When beaconing activity from an internal server (srv-001) to a known malicious IP is detected, the team is called in. Byte deploys a Velociraptor Offline Collector, gathering key forensic artifacts. Anomalies emerge: an unusual-hour login and a process with no associated PID, hinting at defense evasion. Volatile memory analysis reveals a suspicious binary (/tmp/lightdm) running from an odd location. Strings analysis of memory dumps uncovers the malicious domain, confirming the threat. Further investigation exposes a bind mount in /proc, used to hide the trojan (MITRE T1564.013). After cleaning the system, Byte contributes a new Velociraptor artifact to help defenders detect bind mounts.
 
+### 03 - The Unsanitized Upload
+
+A NIDS alert at 2 AM reveals a fourteen-minute outbound TCP session from an Apache worker on `web-prod-07` to an unknown external IP. The team traces the breach to a forgotten legacy upload endpoint with no server-side validation, through which a PHP webshell was dropped, granting the attacker code execution and a reverse shell — all within four minutes of first contact.
+
 *(More episodes coming soon...)*

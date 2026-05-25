@@ -57,16 +57,23 @@ When creating a **comic page**, you must:
 
 When creating a **cover illustration**, you must:
 
-- Maintain the **same horror-noir style** derived from the attached reference image
-- Use **black and white chiaroscuro** with high contrast
-- Layout must include:
-  - **Top title**: `DFIR Chronicles`
-  - **Bottom title**: episode title (as provided)
+> ⚠️ A cover is **NOT** a comic page. It is a **single full-page illustration** with **NO panels**, **NO speech bubbles**, **NO panel borders**, **NO sequential art**. One iconic image only.
+
+- Maintain the **same horror-noir style** inspired by 1980s–1990s Dylan Dog comics
+- Use **pure black and white chiaroscuro** with high contrast, ink-style heavy blacks and sharp whites
+- **Layout** (top to bottom):
+  - **Top title**: large bold white text reading `THE DFIR CHRONICLES`
+  - **Central scene**: a single dramatic noir illustration filling the entire page
+  - **Bottom title**: large bold white text with the episode title
+- **Scene composition**:
+  - **Dylan Log** dominates the foreground (dramatic close-up, brooding expression)
+  - **Cyra Neuron** stands in the middle ground, slightly behind Dylan
+  - **Byte** in the middle ground with his laptop, screen glow on his face
+  - **Background**: dark rainy cityscape with tall buildings and a gloomy sky
+  - **Thematic element**: a visual motif related to the episode’s attack technique (e.g., floating code snippet, skull icon, digital artifact) hovers above the scene like a specter
 - Design the scene based on the **episode’s story description**
-- Capture the **mood** of the episode in a single impactful illustration
-- Ensure **character appearances** match the series references
 - The cover should **hint at the plot** without revealing all details
-- Prioritize strong composition and dramatic lighting
+- Prioritize **strong composition and dramatic lighting** (from below or from screens)
 
 ---
 
