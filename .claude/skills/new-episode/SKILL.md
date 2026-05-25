@@ -12,7 +12,7 @@ Automates the full production pipeline for a new **DFIR Chronicles** episode:
 ---
 
 ## Invocation
-
+ 
 ```
 /new-episode path/to/scenario.yaml
 /new-episode --title "Override Title" path/to/scenario.yaml
