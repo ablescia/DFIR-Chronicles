@@ -31,3 +31,4 @@ When beaconing activity from an internal server (srv-001) to a known malicious I
 A NIDS alert at 2 AM reveals a fourteen-minute outbound TCP session from an Apache worker on `web-prod-07` to an unknown external IP. The team traces the breach to a forgotten legacy upload endpoint with no server-side validation, through which a PHP webshell was dropped, granting the attacker code execution and a reverse shell — all within four minutes of first contact.
 
 *(More episodes coming soon...)*
+ 

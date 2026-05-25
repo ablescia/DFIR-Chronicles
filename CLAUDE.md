@@ -71,4 +71,4 @@ Characters must look identical across all pages and covers. Their descriptions a
 3. Run the Scriptwriter agent on the technical documentation to produce `script.txt`.
 4. Run the Comic Artist agent (`gpt-image-2`) on each script page to populate `pages/`.
 5. Compile pages into a PDF and save as `DFIR_Chronicles_<Title>.pdf`.
-6. Add the episode summary to the root `README.md` under `## Episodes`.
+6. Add the episode summary to the root `README.md` under `## Episodes`. 
