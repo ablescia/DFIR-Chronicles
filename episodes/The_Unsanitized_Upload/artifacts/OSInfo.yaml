@@ -1,0 +1,102 @@
+name: Custom.Linux.Sys.OSInfo
+description: |
+  Identify the Linux distribution, release and running kernel by parsing the
+  canonical OS identification files and the kernel's runtime fields:
+
+  - `OSRelease`  — `/etc/os-release` (systemd-defined, present on virtually
+    every modern distribution). Each `KEY=VALUE` pair is returned as a row;
+    surrounding quotes are stripped.
+  - `LSBRelease` — `/etc/lsb-release` (legacy LSB identification, still
+    present on Ubuntu/Debian-derived systems).
+  - `Issue`      — `/etc/issue` and `/etc/issue.net` (login banners; the
+    distribution often embeds version strings here).
+  - `Uname`      — parsed output of `uname -a`, broken into Kernel name,
+    Hostname, Release, Version, Machine.
+
+  Combining the four sources gives a robust distribution / kernel fingerprint
+  even when one of the files is missing or has been tampered with.
+
+reference:
+  - https://www.freedesktop.org/software/systemd/man/latest/os-release.html
+  - https://refspecs.linuxfoundation.org/LSB_5.0.0/LSB-Core-generic/LSB-Core-generic/lsbrelease.html
+
+author: Antonio Blescia
+
+parameters:
+  - name: OSReleaseFile
+    default: /etc/os-release
+    description: Path of the os-release file.
+  - name: LSBReleaseFile
+    default: /etc/lsb-release
+    description: Path of the lsb-release file.
+  - name: IssueFiles
+    type: csv
+    default: |
+      Path
+      /etc/issue
+      /etc/issue.net
+    description: Issue / login banner files.
+
+sources:
+  - name: OSRelease
+    precondition: |
+      SELECT OS FROM info() WHERE OS = 'linux'
+    query: |
+      LET parsed = SELECT OSReleaseFile AS OSPath,
+        parse_string_with_regex(
+          string=Line,
+          regex='''^(?P<Key>[A-Za-z0-9_]+)=(?P<RawValue>.*)$''') AS Parsed
+        FROM parse_lines(filename=OSReleaseFile)
+
+      SELECT OSPath,
+        Parsed.Key AS Key,
+        regex_replace(re='''^"(.*)"$''',
+                      source=Parsed.RawValue, replace="$1") AS Value
+      FROM parsed
+      WHERE Parsed.Key
+
+  - name: LSBRelease
+    precondition: |
+      SELECT OS FROM info() WHERE OS = 'linux'
+    query: |
+      LET parsed = SELECT LSBReleaseFile AS OSPath,
+        parse_string_with_regex(
+          string=Line,
+          regex='''^(?P<Key>[A-Za-z0-9_]+)=(?P<RawValue>.*)$''') AS Parsed
+        FROM parse_lines(filename=LSBReleaseFile)
+
+      SELECT OSPath,
+        Parsed.Key AS Key,
+        regex_replace(re='''^"(.*)"$''',
+                      source=Parsed.RawValue, replace="$1") AS Value
+      FROM parsed
+      WHERE Parsed.Key
+
+  - name: Issue
+    precondition: |
+      SELECT OS FROM info() WHERE OS = 'linux'
+    query: |
+      SELECT OSPath,
+        regex_replace(re='''\s+$''', source=Data, replace='') AS Value
+      FROM read_file(filenames=IssueFiles.Path)
+      WHERE Data
+
+  - name: Uname
+    precondition: |
+      SELECT OS FROM info() WHERE OS = 'linux'
+    query: |
+      SELECT "uname -a" AS OSPath,
+        Parsed.Kernel AS Kernel,
+        Parsed.Hostname AS Hostname,
+        Parsed.Release AS Release,
+        Parsed.Version AS Version,
+        Parsed.Machine AS Machine
+      FROM foreach(row={
+        SELECT regex_replace(re='''\s+$''', source=Stdout, replace='') AS Line
+        FROM execve(argv=["uname", "-s", "-n", "-r", "-v", "-m"])
+      }, query={
+        SELECT parse_string_with_regex(
+          string=Line,
+          regex='''^(?P<Kernel>\S+)\s+(?P<Hostname>\S+)\s+(?P<Release>\S+)\s+(?P<Version>.+)\s+(?P<Machine>\S+)$''') AS Parsed
+        FROM scope()
+      })
