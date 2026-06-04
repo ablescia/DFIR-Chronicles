@@ -163,7 +163,7 @@ Write the sub-agent output to `episodes/<Slug>/script.txt`.
 
 ---
 
-### Step 4: Stage 3 — Comic Artist (OpenAI GPT-4o image generation)
+### Step 4: Stage 3 — Comic Artist (OpenAI gpt-image-2 image generation)
 
 #### 4a. Read and prepare the system prompt
 
@@ -186,7 +186,7 @@ Write a temporary Python script to a file (e.g. `/tmp/gen_image.py`) that:
    - `prompt`: the combined artist system prompt + page script
    - `n`: `1`
    - `size`: `"1024x1536"` (portrait — comic page format)
-   - `quality`: `"high"`
+   - `quality`: `"low"` (low quality keeps token/image cost down; raise to `"high"` only when final-render fidelity is needed)
    - `output_format`: `"png"`
    - `response_format`: `"b64_json"`
 4. Base64-decodes the `b64_json` field from `response.data[0]` and writes it as a PNG file to `episodes/<Slug>/pages/<N>.png`

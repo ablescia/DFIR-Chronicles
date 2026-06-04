@@ -30,5 +30,9 @@ When beaconing activity from an internal server (srv-001) to a known malicious I
 
 A NIDS alert at 2 AM reveals a fourteen-minute outbound TCP session from an Apache worker on `web-prod-07` to an unknown external IP. The team traces the breach to a forgotten legacy upload endpoint with no server-side validation, through which a PHP webshell was dropped, granting the attacker code execution and a reverse shell — all within four minutes of first contact.
 
+### 04 - Four Bytes to Root
+
+A 03:14 `non-shell parent for su` alert on the multi-tenant CI/CD build worker `ci-worker-07` pulls the team into a kernel-level mystery. A stolen developer login from a public IP stages a Python PoC in `/dev/shm` that weaponizes CVE-2026-31431 — "Copy Fail" — writing four controlled bytes into the *page-cache* copy of `/usr/bin/su` to hand back root, while the on-disk binary stays byte-identical and every file-integrity check swears it is innocent. With `dpkg -V` silent and `sha256sum` clean, the only confession comes from the process tree: a `su` whose parent is `python3`.
+
 *(More episodes coming soon...)*
  
