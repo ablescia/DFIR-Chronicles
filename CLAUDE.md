@@ -34,20 +34,25 @@ The input is a YAML scenario file from the [DFIR-Chronicles: The Game](https://g
 2. Creates the episode directory structure under `episodes/<Title>/`.
 3. Runs the **Technical Writer** agent → resolves `{{MARKER}}` placeholders with realistic values → writes `README.md`.
 4. Runs the **Scriptwriter** agent → writes `script.txt`.
-5. Calls the **OpenAI `gpt-image-2` API** for each script page and the cover → writes `pages/1.png` … `pages/15.png`, `pages/cover.png`.
-6. Updates the root `README.md` with the new episode entry.
+5. Runs the **Image Prompt Builder** agent → expands the script into detailed, panel-by-panel image prompts with a strict text allow-list (one per page + cover) → writes `pages/image_prompts.txt`.
+6. Calls the **OpenAI `gpt-image-2` API** for each *built prompt* (never the raw script) and the cover → writes `pages/1.png` … `pages/15.png`, `pages/cover.png`.
+7. Updates the root `README.md` with the new episode entry.
 
-If `OPENAI_API_KEY` is unavailable or an image call fails, image prompts are saved to `pages/image_prompts.txt` for manual use in ChatGPT.
+`pages/image_prompts.txt` is always produced. If `OPENAI_API_KEY` is unavailable or an image call fails, those built prompts remain there for manual use in ChatGPT.
+
+The prompt-builder stage exists because `gpt-image-2` is literal and renders text poorly: fed a terse script page directly it invents terminal lines, garbles indicators (IPs, hashes, ports, CVEs), turns stage directions into caption boxes, and mis-attributes dialogue. The builder removes that ambiguity, and `agents/comic_artist.md` enforces a **Text Fidelity Contract** (render only the allow-listed strings, verbatim, invent nothing).
 
 ### Manual (stage by stage)
 
-The three agent prompts in `agents/` can also be used individually:
+The four agent prompts in `agents/` can also be used individually:
 
 1. **Technical Writer** (`agents/technical_writer.md`): Takes a YAML scenario file extraction and transforms it into structured English Markdown documentation with resolved markers (the back cover blurb and technical notes section of the episode README).
 
 2. **Scriptwriter** (`agents/scriptwriter.md`): Takes the technical documentation and converts it into a ≤15-page comic script in detective noir style. Each page is a self-contained scene.
 
-3. **Comic Artist** (`agents/comic_artist.md`): Takes individual script pages and generates black-and-white horror-noir illustrations in the style of 1980s–90s Dylan Dog, one image per page. Optimized for `gpt-image-2`.
+3. **Image Prompt Builder** (`agents/image_prompt_builder.md`): Takes the full script and expands each page into an explicit, panel-by-panel image prompt with a strict `TEXT ALLOW-LIST` (verbatim indicators, correct speaker attribution, no invented content), plus a cover prompt. This is what makes the generated images match the script.
+
+4. **Comic Artist** (`agents/comic_artist.md`): Takes a *built* page/cover prompt and generates a black-and-white horror-noir illustration in the style of 1980s–90s Dylan Dog, one image per prompt. Optimized for `gpt-image-2` and bound by the Text Fidelity Contract.
 
 ## Characters
 
@@ -69,6 +74,7 @@ Characters must look identical across all pages and covers. Their descriptions a
 1. Create `episodes/<Episode_Title>/` with the standard subdirectories.
 2. Write the technical notes (or use the Technical Writer agent to generate them) and add to `README.md`.
 3. Run the Scriptwriter agent on the technical documentation to produce `script.txt`.
-4. Run the Comic Artist agent (`gpt-image-2`) on each script page to populate `pages/`.
-5. Compile pages into a PDF and save as `DFIR_Chronicles_<Title>.pdf`.
-6. Add the episode summary to the root `README.md` under `## Episodes`. 
+4. Run the Image Prompt Builder agent on `script.txt` to produce `pages/image_prompts.txt` (detailed per-page + cover prompts).
+5. Run the Comic Artist agent (`gpt-image-2`) on each *built prompt* in `image_prompts.txt` to populate `pages/`.
+6. Compile pages into a PDF and save as `DFIR_Chronicles_<Title>.pdf`.
+7. Add the episode summary to the root `README.md` under `## Episodes`. 

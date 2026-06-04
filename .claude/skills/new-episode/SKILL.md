@@ -7,7 +7,8 @@ description: Generate a full DFIR Chronicles episode from a YAML scenario file (
 Automates the full production pipeline for a new **DFIR Chronicles** episode:
 1. YAML scenario file → English technical notes (Technical Writer, Claude)
 2. Technical notes → comic script (Scriptwriter, Claude)
-3. Script pages → black-and-white illustrations (Comic Artist, OpenAI GPT-4o)
+3. Script → detailed per-page image prompts with strict text allow-lists (Image Prompt Builder, Claude)
+4. Built prompts → black-and-white illustrations (Comic Artist, OpenAI gpt-image-2)
 
 ---
 
@@ -163,53 +164,71 @@ Write the sub-agent output to `episodes/<Slug>/script.txt`.
 
 ---
 
-### Step 4: Stage 3 — Comic Artist (OpenAI gpt-image-2 image generation)
+### Step 4: Stage 3 — Comic Artist (detailed prompt build → OpenAI gpt-image-2)
 
-#### 4a. Read and prepare the system prompt
+> **Why this stage has two sub-steps.** `gpt-image-2` is literal and has weak text rendering. Fed a terse script page directly, it invents terminal lines, garbles indicators (IPs, hashes, ports, paths, CVEs), renders stage directions as caption boxes, and mis-attributes dialogue. So the script page is **never** sent to the image model as-is. First it is expanded into an explicit, panel-by-panel prompt with a strict text allow-list (4b), and only that expanded prompt is rendered (4d).
 
-Read `agents/comic_artist.md`. Extract everything **from the beginning up to (but not including) the line `# Scene or Episode Description`** — this is the artist system prompt (`ARTIST_SYSTEM`).
+#### 4a. Read and prepare the artist system prompt
 
-#### 4b. Parse script pages
+Read `agents/comic_artist.md`. Extract everything **from the beginning up to (but not including) the line `# Scene or Episode Description`** — this is the artist system prompt (`ARTIST_SYSTEM`). It contains the **Text Fidelity Contract** the image model must obey.
 
-Read `episodes/<Slug>/script.txt`. Split it into individual page blocks by detecting lines that start with a digit followed by a period (e.g. `1.`, `2.`, ... `15.`). Each block runs from its heading line to just before the next heading line. Store these as an ordered list of page scripts.
+#### 4b. Stage 3a — Build detailed per-page prompts (Image Prompt Builder, Claude sub-agent)
 
-#### 4c. Generate each page image
+This is the step that fixes script↔image mismatches. **Do not skip it.**
 
-For each page (N = 1, 2, ... up to 15), call the OpenAI Images API using a Python script via Bash. Use the following approach for each page:
+Spawn a Claude sub-agent (Agent tool) with:
 
-Write a temporary Python script to a file (e.g. `/tmp/gen_image.py`) that:
-1. Reads the artist system prompt and the page script as variables
-2. Builds the full prompt by concatenating the artist system prompt + `\n\n` + the page script
+- **Prompt**: Paste the full content of `agents/image_prompt_builder.md`, then append:
+  ```
+  
+  # Episode title
+  <episode title (English, as determined in Step 0)>
+  
+  # Script
+  <full content of episodes/<Slug>/script.txt>
+  ```
+- **Task for sub-agent**: Convert the whole script into explicit, self-contained image prompts — one `### PAGE n ###` block per script page plus a final `### COVER ###` block — each with a panel-by-panel breakdown and a `TEXT ALLOW-LIST`. Return only those blocks, no commentary.
+
+Write the sub-agent output **verbatim** to `episodes/<Slug>/pages/image_prompts.txt`. This file is both the input to the image model **and** the manual-fallback artifact — it is always produced, even when no API key is available.
+
+#### 4c. Parse the built prompts
+
+Read `episodes/<Slug>/pages/image_prompts.txt`. Split it on the delimiter lines:
+- `### PAGE n ###` → the prompt for page `n` (runs to just before the next delimiter).
+- `### COVER ###` → the cover prompt (runs to end of file).
+
+Store the page prompts as an ordered list and keep the cover prompt aside. The number of page blocks should match the number of script pages — if it does not, re-run 4b once before continuing.
+
+#### 4d. Generate each page image
+
+If `$OPENAI_API_KEY` is **not** set, skip rendering — `image_prompts.txt` already holds the detailed prompts for manual use in ChatGPT — and note this in the final report.
+
+Otherwise, for each page (N = 1, 2, … up to the page count), call the OpenAI Images API via a Python script run through Bash. Write a temporary Python script (e.g. `/tmp/gen_image.py`) that:
+1. Holds `ARTIST_SYSTEM` and the page's **built prompt** (from 4c) as variables.
+2. Builds the full prompt by concatenating `ARTIST_SYSTEM` + `\n\n` + the page's built prompt. **Never send the raw `script.txt` page** — always the expanded prompt from `image_prompts.txt`.
 3. Calls the OpenAI Images Generations API:
    - endpoint: `https://api.openai.com/v1/images/generations`
    - model: `gpt-image-2`
-   - `prompt`: the combined artist system prompt + page script
+   - `prompt`: the combined `ARTIST_SYSTEM` + built page prompt
    - `n`: `1`
    - `size`: `"1024x1536"` (portrait — comic page format)
    - `quality`: `"low"` (low quality keeps token/image cost down; raise to `"high"` only when final-render fidelity is needed)
    - `output_format`: `"png"`
    - `response_format`: `"b64_json"`
-4. Base64-decodes the `b64_json` field from `response.data[0]` and writes it as a PNG file to `episodes/<Slug>/pages/<N>.png`
+4. Base64-decodes the `b64_json` field from `response.data[0]` and writes it as a PNG to `episodes/<Slug>/pages/<N>.png`.
 
 Then execute it:
 ```bash
 OPENAI_API_KEY="$OPENAI_API_KEY" python3 /tmp/gen_image.py
 ```
 
-**Fallback**: If `$OPENAI_API_KEY` is not set or the API call fails (non-200 response or missing data), append the page script to `episodes/<Slug>/pages/image_prompts.txt` with a `--- Page N ---` header, and continue to the next page. Do not abort the whole pipeline.
+**Fallback**: If an individual API call fails (non-200 response or missing data), leave that page's prompt in `image_prompts.txt` (already there from 4b), report the failure for page N, and continue to the next page. Do not abort the whole pipeline.
 
 Report progress after each image: `[Page N/total] Image saved → pages/N.png`
 
-#### 4d. Generate the cover image
+#### 4e. Generate the cover image
 
-After all pages are done, create the cover. Build the cover prompt using the format specified in `comic_artist.md`:
-
-```
-Episode title: <title>
-Episode description: <first 3–4 lines of the script, summarizing the story>
-```
-
-Use the same API call as above but with `size: "1024x1536"` and save the result to `episodes/<Slug>/pages/cover.png`.
+After all pages are done, render the cover from the `### COVER ###` block parsed in 4c (already a fully-built prompt with the title in its allow-list). Use the same API call as in 4d (`ARTIST_SYSTEM` + `\n\n` + cover prompt, `size: "1024x1536"`) and save the result to `episodes/<Slug>/pages/cover.png`.
 
 ---
 
@@ -233,7 +252,8 @@ Print a summary:
 - Episode folder created: `episodes/<Slug>/`
 - README.md: ✓
 - script.txt: ✓ (N pages)
-- Pages generated: M/N (note any that fell back to image_prompts.txt)
+- image_prompts.txt: ✓ (N page prompts + cover)
+- Pages generated: M/N (note any that failed and remain as prompts in image_prompts.txt)
 - Cover: ✓ / ✗
 - Root README.md: updated ✓
 
@@ -242,6 +262,7 @@ Print a summary:
 ## Important Notes
 
 - **Never skip a stage** because the output of each feeds the next.
+- **Never send a raw `script.txt` page to `gpt-image-2`.** Always run the Image Prompt Builder (Step 4b) first and render only the expanded prompts from `image_prompts.txt`. Skipping this is the cause of mismatched images (invented terminal lines, garbled indicators, wrong speech bubbles).
 - **Do not hallucinate** technical content — the Technical Writer sub-agent must use the real agent prompt.
 - **Preserve the episode title** exactly as determined in Step 0 in all output files.
 - If the YAML file path does not exist or cannot be parsed as valid YAML, stop and tell the user immediately.
