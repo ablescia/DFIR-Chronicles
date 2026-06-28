@@ -1,0 +1,89 @@
+name: Custom.Linux.Sys.ProcEnviron
+description: |
+  Read environment variables from `/proc/<pid>/environ` for every running
+  process (or a filtered subset) and return them as key-value pairs.
+
+  Process environment variables are a high-value forensic source: malware
+  and lateral-movement tools often carry C2 addresses, session tokens,
+  credential strings, or staging paths in environment variables that do not
+  appear on the command line.
+
+  **Parameters:**
+  - `ProcessRegex`  — filter processes by name (default: all).
+  - `EnvKeyRegex`   — filter variable names by regex (default: all). Use
+                      e.g. `^(PATH|LD_|HOME|USER|SHELL|SSH_|HTTP_PROXY|HTTPS_PROXY)$`
+                      to focus on security-relevant variables.
+  - `ExcludeSystem` — when `true` (default), skip processes owned by root
+                      whose name matches common system daemons unlikely to
+                      carry attacker-controlled state. This keeps the output
+                      tractable during triage. Set to `false` for full
+                      forensic collection.
+
+  **Note:** reading `/proc/<pid>/environ` requires either the same effective
+  UID as the target process or root privileges. Processes owned by other
+  users will produce empty results without an error.
+
+  The `environ` file represents the initial environment at `execve()` time;
+  changes made by the process after launch (via `putenv`/`setenv`) are NOT
+  reflected here. Use `/proc/<pid>/mem` + offsets for a live snapshot.
+
+reference:
+  - https://man7.org/linux/man-pages/man5/proc_pid_environ.5.html
+
+author: Antonio Blescia
+
+parameters:
+  - name: ProcessRegex
+    default: .
+    type: regex
+    description: Filter processes by name.
+  - name: EnvKeyRegex
+    default: .
+    type: regex
+    description: Filter environment variable names by regex.
+  - name: ExcludeSystem
+    default: "Y"
+    type: bool
+    description: Skip common system daemon processes owned by root.
+
+sources:
+  - precondition: |
+      SELECT OS FROM info() WHERE OS = 'linux'
+    query: |
+      LET system_daemons = "^(systemd|kthread|kworker|ksoftirqd|migration|rcu_|irq/|watchdog|cpuhp|kdevtmpfs|kauditd|kswapd|khugepaged|oom_reaper|writeback|kcompactd|kblockd|scsi_|nvme|jbd2|ext4|xfs|btrfs|nfsd|rpciod|rpc\\.|dbus-daemon|cron|sshd|udevd|snapd|polkitd|gdm|NetworkManager|ModemManager|wpa_supplicant|avahi-daemon|rsyslogd|agetty)$"
+
+      LET processes = SELECT Pid, Ppid, Name, Username
+        FROM pslist()
+        WHERE Name =~ ProcessRegex
+          AND NOT (ExcludeSystem
+                   AND Username = "root"
+                   AND Name =~ system_daemons)
+
+      LET read_environ(Pid) = SELECT
+          parse_string_with_regex(
+            string=EnvEntry,
+            regex='''^(?P<Key>[^=]+)=(?P<Value>.*)$''') AS KV
+        FROM foreach(
+          row={
+            SELECT split(sep_string='\x00',
+                         string=Data) AS Entries
+            FROM read_file(
+              filenames=format(format='/proc/%d/environ', args=[Pid]),
+              accessor='file')
+          },
+          query={ SELECT _value AS EnvEntry FROM foreach(row=Entries) })
+        WHERE KV.Key
+
+      SELECT Pid,
+        Ppid,
+        Name AS Process,
+        Username,
+        KV.Key AS Key,
+        KV.Value AS Value
+      FROM foreach(
+        row=processes,
+        query={
+          SELECT Pid, Ppid, Name, Username, KV
+          FROM read_environ(Pid=Pid)
+          WHERE KV.Key =~ EnvKeyRegex
+        })

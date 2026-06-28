@@ -1,0 +1,144 @@
+name: Custom.Linux.Sys.AuthLog
+description: |
+  Parse the system authentication log (`/var/log/auth.log` on Debian/Ubuntu,
+  `/var/log/secure` on RHEL/Fedora) for security-relevant events beyond
+  SSH connections (which are covered by `Linux.Syslog.SSHLogin` upstream).
+
+  Four named sources, each returning `Timestamp`, `Host`, `Program`, and
+  event-specific fields:
+
+  **Sudo source** — every sudo command execution:
+  - `User`     — the user who invoked sudo.
+  - `RunAs`    — the effective user the command ran as (usually `root`).
+  - `PWD`      — working directory at invocation.
+  - `Command`  — the full command executed.
+  - `Result`   — `COMMAND` (accepted) or `AUTH FAILURE` / `NOT IN SUDOERS`.
+
+  **SuEvents source** — `su` session opens and closes (PAM events):
+  - `User`     — account switched to.
+  - `InvokedBy`— the user who invoked su (when parseable).
+  - `Event`    — `opened` or `closed`.
+
+  **UserMgmt source** — account and group management events written by
+  `useradd`, `userdel`, `usermod`, `groupadd`, `groupdel`, `passwd`:
+  - `Program`  — the tool that generated the event.
+  - `Message`  — the raw event message.
+
+  **PAMFailures source** — PAM authentication failures for any service
+  (covers console login, su, screen lockers, etc.):
+  - `Service`  — PAM service name (e.g. `login`, `sudo`, `su`).
+  - `User`     — the username that failed authentication.
+  - `Source`   — source host or `localhost`.
+
+  All sources support `DateAfter`/`DateBefore` filtering and accept both
+  plain and gzip-compressed rotated log files via glob.
+
+reference:
+  - https://linux.die.net/man/5/syslog
+  - https://linux.die.net/man/8/sudo
+  - https://man7.org/linux/man-pages/man8/pam_unix.8.html
+
+author: Antonio Blescia
+
+parameters:
+  - name: AuthLogGlob
+    default: /var/log/{auth.log,secure}*
+    description: Glob matching auth log files (plain and rotated/gzipped).
+  - name: DateAfter
+    type: timestamp
+    description: Only return events after this timestamp (YYYY-MM-DDThh:mm:ssZ).
+  - name: DateBefore
+    type: timestamp
+    description: Only return events before this timestamp (YYYY-MM-DDThh:mm:ssZ).
+
+sources:
+  - name: Sudo
+    precondition: |
+      SELECT OS FROM info() WHERE OS = 'linux'
+    query: |
+      LET logs = SELECT OSPath FROM glob(globs=AuthLogGlob)
+
+      LET sudo_re = '''(?P<Timestamp>\w{3}\s+\d+\s+[\d:]+)\s+(?P<Host>\S+)\s+sudo\[?\d*\]?:\s+(?P<User>\S+)\s*:.*?(?:TTY=\S+\s+)?(?:PWD=(?P<PWD>\S+)\s+)?(?:USER=(?P<RunAs>\S+)\s+)?(?:COMMAND=(?P<Command>.+)|(?P<Result>NOT IN SUDOERS|authentication failure.*))?'''
+
+      SELECT timestamp(string=P.Timestamp + " " + str(str=year())) AS Timestamp,
+        P.Host AS Host,
+        "sudo" AS Program,
+        P.User AS User,
+        P.RunAs AS RunAs,
+        P.PWD AS PWD,
+        regex_replace(re='''\s+$''', source=P.Command, replace='') AS Command,
+        if(condition=P.Command, then="COMMAND", else=P.Result) AS Result
+      FROM foreach(row=logs, query={
+        SELECT parse_string_with_regex(string=Line, regex=sudo_re) AS P
+        FROM parse_lines(filename=OSPath)
+        WHERE Line =~ "sudo" AND P.User
+      })
+      WHERE (NOT DateAfter OR Timestamp > DateAfter)
+        AND (NOT DateBefore OR Timestamp < DateBefore)
+
+  - name: SuEvents
+    precondition: |
+      SELECT OS FROM info() WHERE OS = 'linux'
+    query: |
+      LET logs = SELECT OSPath FROM glob(globs=AuthLogGlob)
+
+      LET su_re = '''(?P<Timestamp>\w{3}\s+\d+\s+[\d:]+)\s+(?P<Host>\S+)\s+su\S*\[?\d*\]?:\s+pam_unix\([^)]+\):\s+session\s+(?P<Event>opened|closed)\s+for\s+user\s+(?P<User>\S+?)(?:\s+by\s+(?P<InvokedBy>\S+)\(uid=\d+\))?'''
+
+      SELECT timestamp(string=P.Timestamp + " " + str(str=year())) AS Timestamp,
+        P.Host AS Host,
+        "su" AS Program,
+        P.User AS User,
+        P.InvokedBy AS InvokedBy,
+        P.Event AS Event
+      FROM foreach(row=logs, query={
+        SELECT parse_string_with_regex(string=Line, regex=su_re) AS P
+        FROM parse_lines(filename=OSPath)
+        WHERE Line =~ "su" AND P.User
+      })
+      WHERE (NOT DateAfter OR Timestamp > DateAfter)
+        AND (NOT DateBefore OR Timestamp < DateBefore)
+
+  - name: UserMgmt
+    precondition: |
+      SELECT OS FROM info() WHERE OS = 'linux'
+    query: |
+      LET logs = SELECT OSPath FROM glob(globs=AuthLogGlob)
+
+      LET mgmt_re = '''(?P<Timestamp>\w{3}\s+\d+\s+[\d:]+)\s+(?P<Host>\S+)\s+(?P<Program>useradd|userdel|usermod|groupadd|groupdel|passwd|chpasswd|chage)\[?\d*\]?:\s+(?P<Message>.+)'''
+
+      SELECT timestamp(string=P.Timestamp + " " + str(str=year())) AS Timestamp,
+        P.Host AS Host,
+        P.Program AS Program,
+        regex_replace(re='''\s+$''', source=P.Message, replace='') AS Message
+      FROM foreach(row=logs, query={
+        SELECT parse_string_with_regex(string=Line, regex=mgmt_re) AS P
+        FROM parse_lines(filename=OSPath)
+        WHERE P.Program
+      })
+      WHERE (NOT DateAfter OR Timestamp > DateAfter)
+        AND (NOT DateBefore OR Timestamp < DateBefore)
+
+  - name: PAMFailures
+    precondition: |
+      SELECT OS FROM info() WHERE OS = 'linux'
+    query: |
+      LET logs = SELECT OSPath FROM glob(globs=AuthLogGlob)
+
+      LET pam_re = '''(?P<Timestamp>\w{3}\s+\d+\s+[\d:]+)\s+(?P<Host>\S+)\s+\S+pam_unix\([^:]+:auth\):\s+authentication failure;\s+logname=\S*\s+uid=\d+\s+euid=\d+\s+tty=\S*\s+ruser=\S*\s+rhost=(?P<Source>\S*)\s+(?:user=(?P<User>\S+))?'''
+
+      LET svc_re = '''pam_unix\((?P<Service>[^:]+):auth\)'''
+
+      SELECT timestamp(string=P.Timestamp + " " + str(str=year())) AS Timestamp,
+        P.Host AS Host,
+        get(item=parse_string_with_regex(string=Line, regex=svc_re),
+            member="Service") AS Service,
+        P.User AS User,
+        if(condition=P.Source, then=P.Source, else="localhost") AS Source
+      FROM foreach(row=logs, query={
+        SELECT Line,
+          parse_string_with_regex(string=Line, regex=pam_re) AS P
+        FROM parse_lines(filename=OSPath)
+        WHERE Line =~ "authentication failure" AND P.Timestamp
+      })
+      WHERE (NOT DateAfter OR Timestamp > DateAfter)
+        AND (NOT DateBefore OR Timestamp < DateBefore)

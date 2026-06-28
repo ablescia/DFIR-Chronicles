@@ -1,0 +1,103 @@
+name: Custom.Linux.Forensics.Timeline
+description: |
+  Generate a MAC(C) filesystem timeline for triage on a **live** Linux system.
+
+  Adapted from `Linux.DeadDisk.Forensic.Timeline` (Antonio Blescia) which
+  targets dead-disk/offline analysis; this artifact is designed for live
+  response with:
+  - Triage-oriented default glob paths covering the most attack-relevant
+    filesystem areas.
+  - Optional MD5 hashing for files below `HashSizeThreshold` (disabled by
+    default to keep collection fast; enable for targeted paths).
+  - A dedicated `RecentFiles` source to surface files touched within a
+    configurable time window — the highest-priority signal during active IR.
+
+  **Timeline source** returns one row per filesystem entry with:
+  - `Md5`    — hex digest or `""` if hashing is disabled or file exceeds
+               the size threshold.
+  - `OSPath` — full path.
+  - `Inode`  — inode number from `Sys.Ino`.
+  - `Mode`   — permission string (e.g. `-rwxr-xr-x`).
+  - `Uid` / `Gid` — numeric owner/group IDs.
+  - `Size`   — file size in bytes.
+  - `Atime` / `Mtime` / `Ctime` — last access, modification, inode-change.
+
+  **RecentFiles source** applies a time-window filter on `Mtime` and `Ctime`
+  over the same glob set, returning only entries touched in the last
+  `RecentDays` days. Sorted newest-first.
+
+  For dead-disk or image analysis use the original
+  `Linux.DeadDisk.Forensic.Timeline` artifact with a non-`auto` accessor.
+
+reference:
+  - https://www.sleuthkit.org/autopsy/docs/api-docs/4.19.3/df/d00/body_file_8h.html
+
+author: Antonio Blescia
+
+parameters:
+  - name: TriageGlobs
+    type: csv
+    default: |
+      Glob
+      /etc/**
+      /home/**
+      /root/**
+      /tmp/**
+      /var/tmp/**
+      /dev/shm/**
+      /opt/**
+      /usr/local/**
+      /var/www/**
+      /srv/**
+    description: |
+      Filesystem areas to timeline. Adjust to focus collection.
+      Warning: large globs (e.g. /usr/**) produce very large output.
+  - name: EnableHash
+    type: bool
+    default: "N"
+    description: Compute MD5 for files below HashSizeThreshold.
+  - name: HashSizeThreshold
+    type: int
+    default: 10485760
+    description: Files larger than this (bytes) are not hashed even if EnableHash is true.
+  - name: RecentDays
+    type: int
+    default: 14
+    description: Number of days back for the RecentFiles source.
+
+sources:
+  - name: Timeline
+    precondition: |
+      SELECT OS FROM info() WHERE OS = 'linux'
+    query: |
+      SELECT if(condition=EnableHash AND Size < HashSizeThreshold,
+                then=hash(path=OSPath, hashselect="MD5").MD5,
+                else="") AS Md5,
+        OSPath,
+        Sys.Ino AS Inode,
+        Mode.String AS Mode,
+        Sys.Uid AS Uid,
+        Sys.Gid AS Gid,
+        Size,
+        Atime, Mtime, Ctime
+      FROM glob(globs=TriageGlobs.Glob)
+
+  - name: RecentFiles
+    precondition: |
+      SELECT OS FROM info() WHERE OS = 'linux'
+    query: |
+      LET cutoff <= timestamp(epoch=now() - RecentDays * 86400)
+
+      SELECT if(condition=EnableHash AND Size < HashSizeThreshold,
+                then=hash(path=OSPath, hashselect="MD5").MD5,
+                else="") AS Md5,
+        OSPath,
+        Sys.Ino AS Inode,
+        Mode.String AS Mode,
+        Sys.Uid AS Uid,
+        Sys.Gid AS Gid,
+        Size,
+        Atime, Mtime, Ctime
+      FROM glob(globs=TriageGlobs.Glob)
+      WHERE Mtime > cutoff OR Ctime > cutoff
+      ORDER BY Mtime DESC

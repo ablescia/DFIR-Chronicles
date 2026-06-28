@@ -1,0 +1,155 @@
+name: Custom.Linux.Sys.ShellHistory
+description: |
+  Collect and parse shell command history with embedded timestamps for bash,
+  zsh (extended history), and fish. Extends `Linux.Sys.BashHistory` (upstream)
+  with timestamp awareness and history file metadata.
+
+  **Bash source** — parses `.*_history` files. When bash is configured with
+  `HISTTIMEFORMAT` the file interleaves `#<epoch>` lines before each command.
+  This source pairs each timestamp with its command and surfaces the delta,
+  allowing reconstruction of the exact sequence and timing of commands. Lines
+  without a preceding timestamp are returned with `Timestamp = null`.
+
+  **Zsh source** — parses zsh extended history files (`EXTENDED_HISTORY`
+  option). Each line has the format `: <epoch>:<elapsed>;<command>`. The
+  elapsed field (seconds the command ran) is preserved.
+
+  **Fish source** — parses `~/.local/share/fish/fish_history` YAML format:
+  ```
+  - cmd: <command>
+    when: <epoch>
+    paths:
+      - <accessed file>
+  ```
+
+  **Metadata source** — returns per-file statistics (path, owner, Mtime,
+  size, line count) useful for detecting history clearing: a recently
+  modified file with very few lines is a common indicator.
+
+  For simple grep-style searching without timestamps, prefer the upstream
+  `Linux.Sys.BashHistory` artifact.
+
+reference:
+  - https://www.gnu.org/software/bash/manual/html_node/Bash-History-Facilities.html
+  - https://zsh.sourceforge.io/Doc/Release/Options.html#index-EXTENDED_005fHISTORY
+  - https://fishshell.com/docs/current/interactive.html#searchable-command-history
+
+author: Antonio Blescia
+
+parameters:
+  - name: BashHistoryGlob
+    default: /{root,home/*}/.*_history
+    description: Glob for bash-style history files.
+  - name: ZshHistoryGlob
+    default: /{root,home/*}/.zsh_history
+    description: Glob for zsh extended history files.
+  - name: FishHistoryGlob
+    default: /{root,home/*}/.local/share/fish/fish_history
+    description: Glob for fish history files.
+  - name: CommandRegex
+    default: .
+    type: regex
+    description: Filter commands by regex (applied to all sources).
+
+sources:
+  - name: Bash
+    precondition: |
+      SELECT OS FROM info() WHERE OS = 'linux'
+    query: |
+      LET history_files = SELECT OSPath FROM glob(globs=BashHistoryGlob)
+
+      LET parse_bash(OSPath) = SELECT OSPath,
+          Line,
+          _key AS LineNum
+        FROM foreach(
+          row={ SELECT enumerate(items=Line) AS Lines
+                FROM parse_lines(filename=OSPath) },
+          query={ SELECT _value AS Line, _key FROM foreach(row=Lines) })
+
+      LET paired = SELECT OSPath,
+          Line,
+          LineNum,
+          if(condition=Line =~ "^#\\d{9,10}$",
+             then=timestamp(epoch=atoi(string=substr(str=Line, start=1)))) AS _ts
+        FROM foreach(row=history_files, query=parse_bash(OSPath=OSPath))
+
+      -- Walk rows and carry forward the last seen timestamp.
+      SELECT OSPath,
+        LineNum,
+        if(condition=NOT Line =~ "^#\\d{9,10}$", then=Line) AS Command,
+        if(condition=NOT Line =~ "^#\\d{9,10}$",
+           then=_ts) AS Timestamp
+      FROM paired
+      WHERE Command AND Command =~ CommandRegex
+
+  - name: Zsh
+    precondition: |
+      SELECT OS FROM info() WHERE OS = 'linux'
+    query: |
+      LET zsh_files = SELECT OSPath FROM glob(globs=ZshHistoryGlob)
+
+      SELECT OSPath,
+        P.Timestamp AS Timestamp,
+        atoi(string=P.Elapsed) AS ElapsedSec,
+        P.Command AS Command
+      FROM foreach(row=zsh_files, query={
+        SELECT parse_string_with_regex(
+            string=Line,
+            regex='''^: (?P<Timestamp>\d+):(?P<Elapsed>\d+);(?P<Command>.+)$''') AS P,
+          OSPath
+        FROM parse_lines(filename=OSPath)
+        WHERE P.Command AND P.Command =~ CommandRegex
+      })
+
+  - name: Fish
+    precondition: |
+      SELECT OS FROM info() WHERE OS = 'linux'
+    query: |
+      LET fish_files = SELECT OSPath FROM glob(globs=FishHistoryGlob)
+
+      LET parse_fish(OSPath) = SELECT
+          parse_string_with_regex(
+            string=Line,
+            regex='''^\s*(?P<Key>cmd|when|paths):\s*(?P<Value>.+)$''') AS P,
+          Line, OSPath
+        FROM parse_lines(filename=OSPath)
+
+      -- State machine: accumulate cmd/when pairs.
+      LET fish_rows = SELECT OSPath,
+          regex_replace(re='''\s+$''', source=P.Value, replace='') AS KeyVal,
+          P.Key AS Key
+        FROM foreach(row=fish_files, query=parse_fish(OSPath=OSPath))
+        WHERE P.Key IN ("cmd", "when")
+
+      SELECT OSPath,
+        timestamp(epoch=atoi(string=When)) AS Timestamp,
+        Command
+      FROM foreach(
+        row={
+          SELECT OSPath,
+            filter(list=KeyVal, regex='.+')[0] AS Command,
+            filter(list=KeyVal, regex='.+')[1] AS When
+          FROM foreach(
+            row=fish_rows,
+            query={ SELECT OSPath, KeyVal FROM scope() })
+          GROUP BY OSPath, Command
+        })
+      WHERE Command AND Command =~ CommandRegex
+
+  - name: Metadata
+    precondition: |
+      SELECT OS FROM info() WHERE OS = 'linux'
+    query: |
+      LET all_history = SELECT OSPath FROM glob(
+        globs=(BashHistoryGlob, ZshHistoryGlob, FishHistoryGlob))
+
+      SELECT OSPath,
+        Mtime,
+        Size,
+        Sys.Uid AS Uid,
+        len(list={
+          SELECT Line FROM parse_lines(filename=OSPath)
+          WHERE Line AND NOT Line =~ "^#\\d{9,10}$"
+        }) AS CommandCount
+      FROM foreach(row=all_history, query={ SELECT OSPath, Mtime, Size, Sys FROM stat(filename=OSPath) })
+      ORDER BY Mtime DESC

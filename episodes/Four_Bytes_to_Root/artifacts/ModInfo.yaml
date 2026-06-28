@@ -1,0 +1,144 @@
+name: Custom.Linux.Proc.ModInfo
+description: |
+  Collect detailed information for every currently loaded kernel module by
+  running `modinfo` against each name found in `/proc/modules`, and expose
+  the kernel taint flags from `/proc/sys/kernel/tainted`.
+
+  **ModInfo source** — for each loaded module the following fields are parsed
+  from `modinfo -F` output:
+
+  - `Filename`      — absolute path of the `.ko` file on disk (absent for
+                      built-in modules; an empty path is itself suspicious
+                      for a dynamically-loaded module).
+  - `License`       — kernel license declaration.
+  - `Description`   — free-text module description.
+  - `Depends`       — comma-separated list of module dependencies.
+  - `Vermagic`      — kernel version string the module was built against.
+  - `Signer`        — CN of the key that signed the module (empty = unsigned).
+  - `KeyID`         — key fingerprint.
+  - `SigHashAlgo`   — hash algorithm used for the signature.
+  - `Signed`        — boolean: `true` if `Signer` is non-empty.
+
+  **KernelTaint source** — reads `/proc/sys/kernel/tainted` and decodes the
+  integer bitmask into named flags (see kernel Documentation/admin-guide/tainted-kernels.rst):
+
+  | Bit | Flag | Meaning |
+  |-----|------|---------|
+  | 0  | G/P  | Proprietary module loaded |
+  | 1  | F    | Module force-loaded |
+  | 2  | S    | Out-of-spec hardware / firmware |
+  | 3  | R    | Module force-unloaded |
+  | 4  | M    | Machine check error occurred |
+  | 5  | B    | Bad page referenced |
+  | 6  | U    | User-space requested taint |
+  | 7  | D    | Kernel died (oops/BUG) |
+  | 8  | A    | ACPI table overridden |
+  | 9  | W    | Taint on warning |
+  | 10 | C    | Staging driver loaded |
+  | 11 | I    | Working around firmware/platform bug |
+  | 12 | O    | Out-of-tree (external) module loaded |
+  | 13 | E    | Unsigned module loaded |
+  | 14 | L    | Soft lockup occurred |
+  | 15 | K    | Kernel live-patched |
+  | 16 | X    | Auxiliary (distro-specific) taint |
+  | 17 | T    | Built with CONFIG_RANDSTRUCT |
+
+reference:
+  - https://www.kernel.org/doc/html/latest/admin-guide/tainted-kernels.html
+  - https://man7.org/linux/man-pages/man8/modinfo.8.html
+  - https://man7.org/linux/man-pages/man5/proc_modules.5.html
+
+author: Antonio Blescia
+
+parameters:
+  - name: ProcModules
+    default: /proc/modules
+    description: Location of the modules listing.
+  - name: ProcTainted
+    default: /proc/sys/kernel/tainted
+    description: Kernel taint flags sysctl node.
+
+sources:
+  - name: ModInfo
+    precondition: |
+      SELECT OS FROM info() WHERE OS = 'linux'
+    query: |
+      LET module_names = SELECT Name FROM split_records(
+          filenames=ProcModules,
+          regex='\\s+',
+          columns=['Name', 'Size', 'UseCount', 'UsedBy', 'Status', 'Address'])
+        WHERE Name AND NOT Name =~ "^#"
+
+      LET parse_field(output, field) = regex_replace(
+          re='''\s+$''',
+          source=get(item=parse_string_with_regex(
+            string=output,
+            regex=format(format='''(?m)^%s:\s+(.+)$''', args=[field])),
+            member="_0"),
+          replace='')
+
+      SELECT Name AS Module,
+        parse_field(output=Info, field="filename")    AS Filename,
+        parse_field(output=Info, field="license")     AS License,
+        parse_field(output=Info, field="description") AS Description,
+        filter(regex='.+',
+               list=split(sep_string=',',
+                 string=parse_field(output=Info, field="depends"))) AS Depends,
+        parse_field(output=Info, field="vermagic")    AS Vermagic,
+        parse_field(output=Info, field="signer")      AS Signer,
+        parse_field(output=Info, field="key")         AS KeyID,
+        parse_field(output=Info, field="sig_hashalgo") AS SigHashAlgo,
+        parse_field(output=Info, field="signer") != "" AS Signed
+      FROM foreach(
+        row=module_names,
+        query={
+          SELECT Name,
+            Stdout AS Info
+          FROM execve(argv=["modinfo", Name])
+        })
+
+  - name: KernelTaint
+    precondition: |
+      SELECT OS FROM info() WHERE OS = 'linux'
+    query: |
+      LET taint_bits = (
+        (0,  "Proprietary module loaded"),
+        (1,  "Module force-loaded"),
+        (2,  "Out-of-spec hardware/firmware"),
+        (3,  "Module force-unloaded"),
+        (4,  "Machine check error"),
+        (5,  "Bad page referenced"),
+        (6,  "User-space taint"),
+        (7,  "Kernel oops/BUG"),
+        (8,  "ACPI table overridden"),
+        (9,  "Taint on warning"),
+        (10, "Staging driver loaded"),
+        (11, "Firmware/platform bug workaround"),
+        (12, "Out-of-tree (external) module"),
+        (13, "Unsigned module loaded"),
+        (14, "Soft lockup"),
+        (15, "Kernel live-patched"),
+        (16, "Distro-specific taint"),
+        (17, "Built with CONFIG_RANDSTRUCT")
+      )
+
+      LET raw_taint = SELECT
+          atoi(string=regex_replace(re='''\s+$''', source=Data, replace='')) AS Value
+        FROM read_file(filenames=ProcTainted)
+
+      LET taint_value = raw_taint[0].Value
+
+      -- VQL non supporta operatori bitwise/shift: testiamo il singolo
+      -- bit tramite stringa binaria a 32 char. Il subquery-block dot
+      -- access ({...}.Col) non è supportato in v0.75.1, quindi
+      -- materializziamo i flag attivi in un LET separato.
+      LET active_flags = SELECT _value[1] AS Flag
+        FROM foreach(row=taint_bits)
+        WHERE substr(
+          str=format(format="%032b", args=[taint_value]),
+          start=31 - _value[0], end=32 - _value[0]) = "1"
+
+      SELECT taint_value AS TaintRaw,
+        taint_value = 0 AS Clean,
+        active_flags.Flag AS ActiveFlags
+      FROM scope()
