@@ -7,7 +7,6 @@ pages: 15
 cover: assets/covers/the-html-smuggling-phishing-attack.jpg
 pdf: assets/pdf/DFIR_Chronicles_The_HTML_Smuggling_Phishing_Attack.pdf
 
-host: user endpoint
 techniques: []
 tags: [Phishing, Email, JavaScript]
 

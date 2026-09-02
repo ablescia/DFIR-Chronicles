@@ -7,7 +7,6 @@ pages: 15
 cover: assets/covers/the-bind-mounted-nightmare.jpg
 pdf: assets/pdf/DFIR_Chronicles_The_Bind_Mounted_Nightmare.pdf
 
-host: srv-001
 techniques: [T1564.013]
 tags: [Linux, Memory forensics, Defense evasion]
 

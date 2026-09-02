@@ -45,7 +45,6 @@
     var facts = [];
     if (ep.releasedLabel) facts.push(["Filed", ep.releasedLabel]);
     if (ep.gameLabel) facts.push(["Game", ep.gameLabel]);
-    if (ep.host) facts.push(["Host", ep.host]);
     if (ep.pages) facts.push(["Pages", String(ep.pages)]);
     if (ep.techniques.length) facts.push(["ATT&CK", ep.techniques.join(" · ")]);
     if (ep.tags.length) facts.push(["Tags", ep.tags.join(" · ")]);

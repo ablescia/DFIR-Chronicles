@@ -7,13 +7,12 @@ pages: 15
 cover: assets/covers/the-unsanitized-upload.jpg
 pdf: assets/pdf/DFIR_Chronicles_The_Unsanitized_Upload.pdf
 
-host: web-prod-07
 techniques: [T1505.003]
 tags: [Web, Linux, Webshell]
 
 # Earliest version of DFIR Chronicles: The Game that ships this level.
 # Later versions carry it too, so the site shows it as "and later".
-game_version: ""
+game_version: 0.1.0
 
 # The SIEM line that opened the case. Feeds the SOC ticker on the home page.
 alert: 02:00 NIDS — 14 min outbound TCP, apache worker on web-prod-07 → 45.77.123.10
