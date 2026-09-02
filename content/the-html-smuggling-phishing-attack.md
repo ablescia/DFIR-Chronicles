@@ -8,8 +8,12 @@ cover: assets/covers/the-html-smuggling-phishing-attack.jpg
 pdf: assets/pdf/DFIR_Chronicles_The_HTML_Smuggling_Phishing_Attack.pdf
 
 host: user endpoint
-techniques: [T1566, T1566.002, T1059.007]
+techniques: []
 tags: [Phishing, Email, JavaScript]
+
+# Earliest version of DFIR Chronicles: The Game that ships this level.
+# Later versions carry it too, so the site shows it as "and later".
+game_version: ""
 
 # The SIEM line that opened the case. Feeds the SOC ticker on the home page.
 alert: suspicious EML forwarded by client — attachment reconstructs payload client-side

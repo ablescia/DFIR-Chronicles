@@ -11,6 +11,10 @@ host: ci-worker-07
 techniques: [T1068, T1078.003, T1059.006]
 tags: [Linux, Kernel, CI/CD, Privilege escalation]
 
+# Earliest version of DFIR Chronicles: The Game that ships this level.
+# Later versions carry it too, so the site shows it as "and later".
+game_version: ""
+
 # The SIEM line that opened the case. Feeds the SOC ticker on the home page.
 alert: 03:14:07 [ALERT] non-shell parent for su — host=ci-worker-07 uid=0 parent=python3
 

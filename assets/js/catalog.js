@@ -61,7 +61,7 @@
     var meta = [];
     if (ep.releasedLabel) meta.push(ep.releasedLabel);
     if (ep.pages) meta.push(ep.pages + " pages");
-    if (ep.host) meta.push(ep.host);
+    if (ep.gameLabel) meta.push("Game " + ep.gameLabel);
     if (ep.techniques.length) meta.push(ep.techniques.join(" · "));
     hero.querySelector("[data-hero-meta]").innerHTML = meta
       .map(function (m) { return "<span>" + C.escapeHtml(m) + "</span>"; })
@@ -206,7 +206,7 @@
           '<td class="ledger__no">' + ep.no + "</td>" +
           '<td><a class="ledger__title" href="' + ep.href + '">' + C.escapeHtml(ep.title) + "</a></td>" +
           "<td>" + C.escapeHtml(ep.releasedLabel || "—") + "</td>" +
-          "<td>" + C.escapeHtml(ep.host || "—") + "</td>" +
+          "<td>" + C.escapeHtml(ep.gameLabel || "—") + "</td>" +
           '<td class="ledger__att">' + C.escapeHtml(ep.techniques.join(", ") || "—") + "</td>" +
           "<td>" + (ep.pages || "—") + "</td>" +
           "<td>" + (ep.pdf

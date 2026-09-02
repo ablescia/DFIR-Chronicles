@@ -20,6 +20,18 @@
 
   function pad(n) { return String(n).padStart(2, "0"); }
 
+  /* The game ships every earlier level, so an episode only needs to name the
+     first version that contains it: "1.4.0" renders as "1.4.0+", read as
+     "1.4.0 and later". Everywhere it appears it is already labelled Game, so a
+     "v" prefix in the catalog is dropped rather than shouted back in caps. */
+  function gameLabel(raw) {
+    var text = String(raw == null ? "" : raw).trim()
+      .replace(/^[vV](?=\d)/, "")
+      .replace(/\+\s*$/, "")
+      .trim();
+    return text ? text + "+" : "";
+  }
+
   function basename(path) {
     return String(path || "").split("/").pop().replace(/\.[^.]+$/, "");
   }
@@ -145,6 +157,8 @@
     ep.tags = raw.tags || [];
     ep.techniques = raw.techniques || [];
     ep.releasedLabel = formatDate(raw.released);
+    ep.gameVersion = String(raw.game_version == null ? "" : raw.game_version).trim();
+    ep.gameLabel = gameLabel(ep.gameVersion);
     ep.href = "episode.html?id=" + encodeURIComponent(ep.id);
     return ep;
   }
@@ -262,6 +276,7 @@
     slugify: slugify,
     pad: pad,
     formatDate: formatDate,
+    gameLabel: gameLabel,
     escapeHtml: escapeHtml,
     stickMasthead: stickMasthead,
     revealOnScroll: revealOnScroll,

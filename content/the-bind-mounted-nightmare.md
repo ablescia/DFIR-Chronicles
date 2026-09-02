@@ -11,6 +11,10 @@ host: srv-001
 techniques: [T1564.013]
 tags: [Linux, Memory forensics, Defense evasion]
 
+# Earliest version of DFIR Chronicles: The Game that ships this level.
+# Later versions carry it too, so the site shows it as "and later".
+game_version: ""
+
 # The SIEM line that opened the case. Feeds the SOC ticker on the home page.
 alert: beaconing from srv-001 to 185.118.164.195 — active process, no PID
 
