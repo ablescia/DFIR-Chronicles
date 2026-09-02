@@ -102,30 +102,34 @@
     });
   }
 
-  /* Only the head of the file is needed to build a card, so ask for it. Servers
-     that ignore Range answer 200 with the whole file, which parses the same. */
+  /* An episode file is read once and the promise kept, so the front-matter pass
+     that builds the cards and the note rendered from the same file share a
+     single request.
+
+     Read it whole. Asking for only the head with a Range request costs the
+     catalog less, but the browser then holds a partial entry for that URL and
+     serves those same few kilobytes back to the later full request — the note
+     stops mid-sentence at the window boundary with no error anywhere. */
+  var reading = {};
+
+  function readFile(url) {
+    if (!reading[url]) {
+      reading[url] = fetch(url).then(function (res) {
+        if (!res.ok) throw new Error(url + " returned " + res.status);
+        return res.text();
+      });
+    }
+    return reading[url];
+  }
+
   function readFrontMatter(url) {
-    return fetch(url, { headers: { Range: "bytes=0-4095" } })
-      .then(function (res) {
-        if (!res.ok && res.status !== 206) throw new Error(url + " returned " + res.status);
-        var partial = res.status === 206;
-        return res.text().then(function (chunk) {
-          if (!OPENER.test(chunk)) return {};          // no front matter at all
-          var front = splitFrontMatter(chunk);
-          if (front.data !== null) return front.data;
-          if (!partial) return {};
-          // Front matter longer than the window — read the file whole.
-          return fetch(url).then(function (r) { return r.text(); })
-            .then(function (whole) { return splitFrontMatter(whole).data || {}; });
-        });
-      })
+    return readFile(url)
+      .then(function (text) { return splitFrontMatter(text).data || {}; })
       .catch(function (err) {
         console.error("Could not read front matter from " + url, err);
         return {};
       });
   }
-
-  var OPENER = /^\uFEFF?---[ \t]*\r?\n/;
 
   /* Returns data:null when the text carries no front matter, so callers can
      tell "absent" from "present but empty". */
@@ -167,9 +171,7 @@
      a four-key catalog entry still produces a complete card. */
   function fetchHook(ep) {
     if (ep.hook || !ep.readme) return Promise.resolve(ep.hook);
-    return fetch(ep.readme).then(function (r) {
-      return r.ok ? r.text() : "";
-    }).then(function (text) {
+    return readFile(ep.readme).then(function (text) {
       var md = splitFrontMatter(text).body;
       var para = md.split(/\n\s*\n/).find(function (block) {
         var t = block.trim();
@@ -270,6 +272,7 @@
 
   global.Chronicles = {
     loadCatalog: loadCatalog,
+    readFile: readFile,
     fetchHook: fetchHook,
     renderMarkdown: renderMarkdown,
     splitFrontMatter: splitFrontMatter,

@@ -77,10 +77,7 @@
     var prose = document.querySelector("[data-note]");
     if (!ep.readme) { noNote(prose); return; }
 
-    return fetch(ep.readme).then(function (res) {
-      if (!res.ok) throw new Error(ep.readme + " returned " + res.status);
-      return res.text();
-    }).then(function (md) {
+    return C.readFile(ep.readme).then(function (md) {
       prose.innerHTML = C.renderMarkdown(md);
       buildIndex(prose);
       C.revealOnScroll();
