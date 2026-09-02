@@ -1,0 +1,55 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  THE DFIR CHRONICLES — site settings and running order
+#
+#  Each episode describes itself in the front matter at the top of its own file
+#  under content/. This catalog only says which files exist and in what order,
+#  so adding an episode is one line here and one file there.
+#
+#      episodes:
+#        - content/four-bytes-to-root.md
+#
+#  This file is published as part of the site. It is built in the studio repo,
+#  where `tools/site/sync.sh` writes content/<slug>.md with the front matter
+#  already filled in as far as it can be, and prints the line to paste below.
+#
+#  A list entry may also be a mapping, and any key written there overrides the
+#  file's front matter — useful for a one-off without editing the episode:
+#
+#        - file: content/four-bytes-to-root.md
+#          number: 7
+# ─────────────────────────────────────────────────────────────────────────────
+
+site:
+  title: The DFIR Chronicles
+  tagline: Incident response, with trench coats.
+  intro: >-
+    In a world ruled by ones and zeroes, where every login could be a lie and
+    every email a loaded gun, a team of digital sleuths dissects the intrusions
+    no firewall stopped. Each case is a real attack technique, retold in ink.
+  url: https://ablescia.github.io/DFIR-Chronicles/
+  repo: https://github.com/ablescia/DFIR-Chronicles
+  banner: assets/img/banner.jpg
+
+  # The dossier that opens the site, by episode id (the file name without .md).
+  # Remove it and the newest episode takes the billboard.
+  featured: four-bytes-to-root
+
+  cast:
+    - name: Dylan Log
+      role: Lead investigator
+      note: World-weary. Haunted by every breach that got through before the alert did.
+    - name: Cyra Neuron
+      role: Digital analyst
+      note: Ice in the veins, logic in the blood, a memory dump on the second screen.
+    - name: Byte
+      role: Forensicator
+      note: Finds the pattern in the noise. Answers to "Bitty".
+    - name: Alexander
+      role: SOC manager
+      note: Signs the incident reports and asks the questions nobody wants.
+
+episodes:
+  - content/the-html-smuggling-phishing-attack.md
+  - content/the-bind-mounted-nightmare.md
+  - content/the-unsanitized-upload.md
+  - content/four-bytes-to-root.md

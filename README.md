@@ -1,38 +1,57 @@
-![banner](./banner.png)
+![banner](./assets/img/banner.jpg)
 
-A cyber-noir saga from the shadows of the digital battlefield.
+In a world ruled by ones and zeroes, where every login could be a lie and every email a loaded gun, a team of digital sleuths dissects the intrusions no firewall stopped. Each case is a real attack technique, retold in ink.
 
-In a world ruled by ones and zeroes, where every login could be a lie and every email a loaded gun, The DFIR Chronicles follows a seasoned team of digital sleuths as they battle threats no firewall can stop alone.
+**[Read the case files online](https://ablescia.github.io/DFIR-Chronicles/)**
 
-- **Dylan Log**: the world-weary cyber-investigator haunted by past breaches.
-- **Cyra Neuron**: the razor-sharp analyst with ice in her veins and logic in her blood.
-- **Byte ("Bitty")**: the eccentric young forensicator who sees patterns where others see noise.
-
-Together, they dissect malware masquerading as invoices, trace phishing trails through corporate carnage, and pull truth from tangled lines of JavaScript and shellcode. Each issue dives into real-world attack techniques, from HTML smuggling and credential harvesting to fileless intrusions and living-off-the-land exploits, retold through the lens of digital noir, where the glow of a terminal replaces the flicker of a cigarette, and the only thing sharper than a knife is a well-written grep.
-
-Dark. Technical. Uncompromising.
-
-The DFIR Chronicles isn't just a comic: it's incident response, with trench coats.
+| | |
+|---|---|
+| **Dylan Log** | World-weary. Haunted by every breach that got through before the alert did. |
+| **Cyra Neuron** | Ice in the veins, logic in the blood, a memory dump on the second screen. |
+| **Byte** | Finds the pattern in the noise. Answers to "Bitty". |
+| **Alexander** | Signs the incident reports and asks the questions nobody wants. |
 
 ---
 
 ## Episodes
 
-### 01 - The HTML Smuggling Phishing Attack
+### 01 — The HTML Smuggling Phishing Attack
 
-A malicious email. An innocent-looking HTML attachment. Inside, obfuscated JavaScript builds a payload designed to bypass defenses and steal credentials. The team peels back the layers of digital deception to expose a phishing campaign built on HTML Smuggling.
+An innocent-looking HTML attachment builds its own payload in the browser, and walks straight past the email gateway.
 
-### 02 - The Bind Mounted Nightmare
+[Read the case file](https://ablescia.github.io/DFIR-Chronicles/episode.html?id=the-html-smuggling-phishing-attack) · [Download the comic (PDF)](./assets/pdf/DFIR_Chronicles_The_HTML_Smuggling_Phishing_Attack.pdf)
 
-When beaconing activity from an internal server (srv-001) to a known malicious IP is detected, the team is called in. Byte deploys a Velociraptor Offline Collector, gathering key forensic artifacts. Anomalies emerge: an unusual-hour login and a process with no associated PID, hinting at defense evasion. Volatile memory analysis reveals a suspicious binary (/tmp/lightdm) running from an odd location. Strings analysis of memory dumps uncovers the malicious domain, confirming the threat. Further investigation exposes a bind mount in /proc, used to hide the trojan (MITRE T1564.013). After cleaning the system, Byte contributes a new Velociraptor artifact to help defenders detect bind mounts.
+<sub>2025-08-05 · 15 pages</sub>
 
-### 03 - The Unsanitized Upload
+### 02 — The Bind Mounted Nightmare
 
-A NIDS alert at 2 AM reveals a fourteen-minute outbound TCP session from an Apache worker on `web-prod-07` to an unknown external IP. The team traces the breach to a forgotten legacy upload endpoint with no server-side validation, through which a PHP webshell was dropped, granting the attacker code execution and a reverse shell — all within four minutes of first contact.
+The process is beaconing. The process has no PID. Something in /proc is lying, and the lie is mounted on top of the truth.
 
-### 04 - Four Bytes to Root
+[Read the case file](https://ablescia.github.io/DFIR-Chronicles/episode.html?id=the-bind-mounted-nightmare) · [Download the comic (PDF)](./assets/pdf/DFIR_Chronicles_The_Bind_Mounted_Nightmare.pdf)
 
-A 03:14 `non-shell parent for su` alert on the multi-tenant CI/CD build worker `ci-worker-07` pulls the team into a kernel-level mystery. A stolen developer login from a public IP stages a Python PoC in `/dev/shm` that weaponizes CVE-2026-31431 — "Copy Fail" — writing four controlled bytes into the *page-cache* copy of `/usr/bin/su` to hand back root, while the on-disk binary stays byte-identical and every file-integrity check swears it is innocent. With `dpkg -V` silent and `sha256sum` clean, the only confession comes from the process tree: a `su` whose parent is `python3`.
+<sub>2025-09-03 · 15 pages · T1564.013</sub>
 
-*(More episodes coming soon...)*
- 
+### 03 — The Unsanitized Upload
+
+A forgotten upload endpoint with a JavaScript-only guard. Four minutes from first contact to a reverse shell on the other side of the world.
+
+[Read the case file](https://ablescia.github.io/DFIR-Chronicles/episode.html?id=the-unsanitized-upload) · [Download the comic (PDF)](./assets/pdf/DFIR_Chronicles_The_Unsanitized_Upload.pdf)
+
+<sub>2026-05-25 · 15 pages · T1505.003</sub>
+
+### 04 — Four Bytes to Root
+
+Four bytes written into the page cache hand back root. The binary on disk never changes. Only the process tree knows.
+
+[Read the case file](https://ablescia.github.io/DFIR-Chronicles/episode.html?id=four-bytes-to-root) · [Download the comic (PDF)](./assets/pdf/DFIR_Chronicles_Four_Bytes_to_Root.pdf)
+
+<sub>2026-06-04 · 15 pages · T1068, T1078.003, T1059.006</sub>
+
+---
+
+This repository holds the published comics and the site that presents them.
+The scripts, page art, agent prompts and forensic artifacts behind each
+episode are produced in a separate studio repository.
+
+The comics are released under the licence in [LICENSE](./LICENSE); the
+technical notes are free to reuse.

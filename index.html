@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The DFIR Chronicles — case files</title>
+<meta name="description" content="A cyber-noir comic series about a digital forensics and incident response team. Every issue is a real attack technique, retold in ink.">
+<meta name="theme-color" content="#08080a">
+
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ablescia.github.io/DFIR-Chronicles/">
+<meta property="og:title" content="The DFIR Chronicles">
+<meta property="og:description" content="Incident response, with trench coats. Read and download every case file.">
+<meta property="og:image" content="https://ablescia.github.io/DFIR-Chronicles/assets/img/banner.jpg">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="canonical" href="https://ablescia.github.io/DFIR-Chronicles/">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="assets/css/noir.css">
+</head>
+<body>
+
+<header class="masthead">
+  <a class="wordmark" href="index.html">
+    The DFIR Chronicles <span>DOSSIER</span>
+  </a>
+  <nav aria-label="Sections">
+    <a data-nav="section" href="#cases">Case files</a>
+    <a data-nav="section" href="#index">The index</a>
+    <a data-nav="section" href="#cast">The team</a>
+    <a href="#" data-repo target="_blank" rel="noopener">GitHub</a>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ── billboard ─────────────────────────────────────────────────────── -->
+  <section class="hero halftone" aria-labelledby="hero-title">
+    <div class="hero__backdrop">
+      <img data-hero-backdrop src="assets/img/banner.jpg" alt="" aria-hidden="true">
+    </div>
+
+    <div class="shell hero__grid">
+      <div>
+        <p class="eyebrow hero__caseno" data-intro data-reveal="up">
+          <i class="dot" aria-hidden="true"></i>
+          <span data-hero-caseno>Case file</span>
+        </p>
+        <h1 class="hero__title" id="hero-title" data-intro data-reveal data-hero-title>&nbsp;</h1>
+        <div class="hero__meta" data-intro data-reveal="up" data-hero-meta></div>
+        <p class="hero__hook" data-intro data-reveal="up" data-hero-hook></p>
+        <div class="hero__actions" data-intro data-reveal="up">
+          <a class="btn" data-hero-read href="#">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5H4Z"/><path d="M20 4h-7a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5H20Z"/></svg>
+            <span>Open the case file</span>
+          </a>
+          <a class="btn btn--ghost" data-hero-pdf href="#">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 20h16"/></svg>
+            <span>Download PDF</span>
+          </a>
+        </div>
+      </div>
+
+      <figure class="hero__cover halftone" data-intro data-reveal>
+        <img data-hero-cover src="" alt="" width="900" height="1350">
+      </figure>
+    </div>
+  </section>
+
+  <!-- ── the alerts that opened each case ──────────────────────────────── -->
+  <div class="ticker" role="complementary" aria-label="Opening alerts">
+    <p class="ticker__tag"><i class="dot" aria-hidden="true">●</i> SOC feed</p>
+    <div class="ticker__viewport">
+      <div class="ticker__track" data-ticker></div>
+    </div>
+  </div>
+
+  <!-- ── the rail ──────────────────────────────────────────────────────── -->
+  <section class="section shell" id="cases" aria-labelledby="cases-title">
+    <div class="section__head rule-label">
+      <h2 class="section__title" id="cases-title">Case files</h2>
+      <p class="section__note" data-rail-count></p>
+    </div>
+
+    <div class="chips" data-chips role="group" aria-label="Filter by tag"></div>
+
+    <div class="rail">
+      <button class="rail__arrow rail__arrow--prev" type="button" aria-label="Scroll to previous cases">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>
+      </button>
+      <div class="rail__track" data-rail></div>
+      <button class="rail__arrow rail__arrow--next" type="button" aria-label="Scroll to more cases">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- ── the ledger ────────────────────────────────────────────────────── -->
+  <section class="section shell" id="index" aria-labelledby="index-title">
+    <div class="section__head rule-label">
+      <h2 class="section__title" id="index-title">The index</h2>
+      <p class="section__note">Every case, with its host and ATT&amp;CK mapping</p>
+    </div>
+
+    <div class="ledger-wrap" data-reveal="up">
+      <table class="ledger">
+        <caption>Index of case files</caption>
+        <thead>
+          <tr>
+            <th scope="col">No.</th>
+            <th scope="col">Case</th>
+            <th scope="col">Filed</th>
+            <th scope="col">Host</th>
+            <th scope="col">ATT&amp;CK</th>
+            <th scope="col">Pages</th>
+            <th scope="col">Comic</th>
+          </tr>
+        </thead>
+        <tbody data-ledger></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── the team ──────────────────────────────────────────────────────── -->
+  <section class="section shell" id="cast" aria-labelledby="cast-title">
+    <div class="section__head rule-label">
+      <h2 class="section__title" id="cast-title">The team</h2>
+      <p class="section__note" data-site-tagline></p>
+    </div>
+    <p style="max-width:62ch;margin:0 0 2.25rem;font-size:1.05rem;line-height:1.7;color:var(--paper);opacity:.85" data-site-intro data-reveal="up"></p>
+    <div class="cast" data-cast data-reveal="up"></div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="shell footer__grid">
+    <p><span data-site-title>The DFIR Chronicles</span> — © <span data-year></span></p>
+    <p>Comics under CC BY-NC-SA. Technical notes are free to use.</p>
+    <p><a href="#" data-repo target="_blank" rel="noopener">Source repository</a></p>
+  </div>
+</footer>
+
+<script src="assets/vendor/js-yaml.min.js"></script>
+<script src="assets/js/chronicles.js"></script>
+<script src="assets/js/catalog.js"></script>
+</body>
+</html>
