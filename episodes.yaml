@@ -53,3 +53,5 @@ episodes:
   - content/the-bind-mounted-nightmare.md
   - content/the-unsanitized-upload.md
   - content/four-bytes-to-root.md
+  - content/the-workshop-raspberry.md
+  - content/php2shell-the-phantom-execution.md

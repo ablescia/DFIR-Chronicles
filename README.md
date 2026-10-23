@@ -47,6 +47,22 @@ Four bytes written into the page cache hand back root. The binary on disk never 
 
 <sub>2026-06-04 · 15 pages · T1068, T1078.003, T1059.006</sub>
 
+### 05 — The Workshop Raspberry
+
+A student-built Raspberry Pi with a factory password and an open port forward. The sensor box was never the target: the NAS behind it was.
+
+[Read the case file](https://ablescia.github.io/DFIR-Chronicles/episode.html?id=the-workshop-raspberry) · [Download the comic (PDF)](./assets/pdf/DFIR_Chronicles_The_Workshop_Raspberry.pdf)
+
+<sub>2026-10-23 · 15 pages · T1133, T1110.001, T1078.001, T1021.004, T1105, T1053.003, T1059.004, T1036.005, T1571, T1016, T1018, T1021.002, T1039, T1560.001, T1048.003, T1070.004</sub>
+
+### 06 — PHP2Shell — The Phantom Execution
+
+Eleven PHP-FPM crashes fill four logs with errors. The twelfth request gets a 200 and leaves a backdoor that will outlive the patch.
+
+[Read the case file](https://ablescia.github.io/DFIR-Chronicles/episode.html?id=php2shell-the-phantom-execution) · [Download the comic (PDF)](./assets/pdf/DFIR_Chronicles_PHP2Shell_The_Phantom_Execution.pdf)
+
+<sub>2026-10-23 · 15 pages · T1190, T1505.003, T1036.005, T1564.001, T1552.001, T1213.006, T1560.002, T1041, T1070.004</sub>
+
 ---
 
 This repository holds the published comics and the site that presents them.
