@@ -32,7 +32,7 @@ site:
 
   # The dossier that opens the site, by episode id (the file name without .md).
   # Remove it and the newest episode takes the billboard.
-  featured: four-bytes-to-root
+  featured: php2shell-the-phantom-execution
 
   cast:
     - name: Dylan Log
